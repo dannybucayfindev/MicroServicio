@@ -1,0 +1,105 @@
+name:  BackendCoreFinance
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  runner:
+    name: Checkout Runner
+    runs-on: [self-hosted, Linux, X64, development, finantix]
+    steps:
+      - name: Validar runner
+        run: echo "✅ Runner conectado correctamente en $HOSTNAME"
+      
+      - name: Mostrar etiquetas del runner
+        run: echo "Labels self-hosted, Linux, X64, development, finantix"
+
+
+
+  build:
+    needs: runner
+    name: Build and Deploy to Development
+    runs-on: [self-hosted, development, finantix]
+
+    steps:
+      - name: Checkout con submódulos usando PAT
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN }}
+
+
+
+      - name: Crear archivo .env con secretos
+        run: |
+          cat <<EOF > .env
+          # ========================================
+          # General configuration
+          # ========================================
+
+          # Puerto en el que se ejecutará la aplicación
+          portCore=8000
+          portAuth=8001
+          portConfi=8012
+          # Entorno de ejecución: development | production | test
+          nodeEnv=production
+
+          # Habilitar CORS
+          corsOrigin="http://172.31.5.164:4200"
+
+
+          # ========================================
+          # Microservices configuration
+          # ========================================
+
+          # Servidores NATS para microservicios (separados por coma)
+          msNatsServer="nats://localhost:4222"
+
+
+          # ========================================
+          # JWT configuration
+          # ========================================
+
+          # Secret para firmar los tokens JWT
+          jwtSecret=6e2f8c7b9a4d1e5f3c0b7a2d9f8e6c1b
+
+          # Tiempo de expiración de los tokens JWT
+          jwtExpiresIn=2h
+          jwtRefreshExpiresIn=7d
+
+          # ========================================
+          # Database configuration
+          # ========================================
+
+          # Host de la base de datos
+          dbHost=172.31.23.42
+
+          # Puerto de la base de datos (PgBouncer en este caso)
+          dbPort=5432
+
+          # Usuario de la base de datos
+          dbUser=postgres
+
+          # Contraseña de la base de datos
+          dbPassword=co@c2024
+
+          # Nombre de la base de datos
+          dbName=RRF_BD_PG
+
+          # Si la conexión a la DB debe usar SSL
+          dbSsl=false
+          EOF
+
+      - name: Reconstrucción de la Imagen
+        run: docker compose -f ./docker-compose.prod.yml build
+
+      - name: Inicialización de Docker Compose
+        run: docker compose -f ./docker-compose.prod.yml up -d
+
+      - name: Eliminación de imagenes obsoletas o dangling
+        run: docker rmi $(docker images -f dangling=true -q) || echo 'No existen imagenes <none>'
+      
+      - name: Limpieza del cache de Docker
+        run: docker system prune -f

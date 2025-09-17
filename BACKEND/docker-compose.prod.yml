@@ -1,0 +1,131 @@
+services:
+  nats-server:
+    container_name: NATS-SERVER-FINANTIX-PROD
+    image: nats:2.11.8
+    restart: always
+    ports:
+      - "8222:8222"
+
+  ms-auth:
+    container_name: MS-AUTH-FINANTIX-PROD
+    image: ms-auth-finantix-prod
+    restart: always
+    depends_on:
+      - nats-server
+    build:
+      context: ./ms-auth
+      dockerfile: Dockerfile.prod
+    ports:
+      - ${portAuth}:${portAuth}
+    environment:
+      - port=${portAuth}
+      - msNatsServer=nats://nats-server:4222
+      - jwtSecret=${jwtSecret}
+      - jwtExpiresIn=${jwtExpiresIn}
+      - jwtRefreshExpiresIn=${jwtRefreshExpiresIn}
+      - dbHost=${dbHost}
+      - dbPort=${dbPort}
+      - dbUser=${dbUser}
+      - dbPassword=${dbPassword}
+      - dbName=${dbName}
+      - dbSsl=${dbSsl}
+
+  ms-perso:
+    container_name: MS-PERSO-FINANTIX-PROD
+    image: ms-perso-finantix-prod
+    restart: always
+    depends_on:
+      - nats-server
+    build:
+      context: ./ms-perso
+      dockerfile: Dockerfile.prod
+    ports:
+      - ${portPerso}:${portPerso}
+    environment:
+      - port=${portPerso}
+      - msNatsServer=nats://nats-server:4222
+      - dbHost=${dbHost}
+      - dbPort=${dbPort}
+      - dbUser=${dbUser}
+      - dbPassword=${dbPassword}
+      - dbName=${dbName}
+      - dbSsl=${dbSsl}
+      - dbConnTimeoutMs=${dbConnTimeoutMs}
+      - dbIdleTimeoutMs=${dbIdleTimeoutMs}
+      - dbMaxPool=${dbMaxPool}
+      - dbStatementTimeoutMs=${dbStatementTimeoutMs}
+      - dbPoolSize=${dbPoolSize}
+      - dbConnectionTimeout=${dbConnectionTimeout}
+      - dbIdleTimeout=${dbIdleTimeout}
+      - dbMaxUses=${dbMaxUses}
+      - logLevel=${logLevel}
+      - logFormat=${logFormat}
+
+  ms-confi:
+    container_name: MS-CONFI-FINANTIX-PROD
+    image: ms-confi-finantix-prod
+    restart: always
+    depends_on:
+      - nats-server
+    build:
+      context: ./ms-confi
+      dockerfile: Dockerfile.prod
+    ports:
+      - ${portConfi}:${portConfi}
+    environment:
+      - port=${portConfi}
+      - msNatsServer=nats://nats-server:4222
+      - dbHost=${dbHost}
+      - dbPort=${dbPort}
+      - dbUser=${dbUser}
+      - dbPassword=${dbPassword}
+      - dbName=${dbName}
+      - dbSsl=${dbSsl}
+      - dbConnTimeoutMs=${dbConnTimeoutMs}
+      - dbIdleTimeoutMs=${dbIdleTimeoutMs}
+      - dbMaxPool=${dbMaxPool}
+      - dbStatementTimeoutMs=${dbStatementTimeoutMs}
+      - dbPoolSize=${dbPoolSize}
+      - dbConnectionTimeout=${dbConnectionTimeout}
+      - dbIdleTimeout=${dbIdleTimeout}
+      - dbMaxUses=${dbMaxUses}
+      - logLevel=${logLevel}
+      - logFormat=${logFormat}
+
+  ms-core:
+    container_name: MS-CORE-FINANTIX-PROD
+    image: ms-core-finantix-prod
+    restart: always
+    depends_on:
+      - nats-server
+      - ms-auth
+      - ms-perso
+      - ms-confi
+    build:
+      context: ./ms-core
+      dockerfile: Dockerfile.prod
+    ports:
+      - ${portCore}:${portCore}
+    environment:
+      - port=${portCore}
+      - msNatsServer=nats://nats-server:4222
+      - corsOrigin=${corsOrigin}
+      - dbHost=${dbHost}
+      - dbPort=${dbPort}
+      - dbUser=${dbUser}
+      - dbPassword=${dbPassword}
+      - dbName=${dbName}
+      - dbSsl=${dbSsl}
+      - dbConnTimeoutMs=${dbConnTimeoutMs}
+      - dbIdleTimeoutMs=${dbIdleTimeoutMs}
+      - dbMaxPool=${dbMaxPool}
+      - dbStatementTimeoutMs=${dbStatementTimeoutMs}
+      - dbPoolSize=${dbPoolSize}
+      - dbConnectionTimeout=${dbConnectionTimeout}
+      - dbIdleTimeout=${dbIdleTimeout}
+      - dbMaxUses=${dbMaxUses}
+      - logLevel=${logLevel}
+      - logFormat=${logFormat}
+      - circuitBreakerTimeout=3000
+      - circuitBreakerErrorThresholdPercentage=50
+      - circuitBreakerResetTimeout=10000

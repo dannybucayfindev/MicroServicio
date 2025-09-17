@@ -1,0 +1,65 @@
+services:
+  nats-server:
+    container_name: NATS-SERVER-FINANTIX-DEV
+    image: nats:2.11.8
+    ports:
+      - "8222:8222"
+
+  ms-core:
+    container_name: MS-CORE-FINANTIX-DEV
+    build: ./ms-core
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ms-core/src:/usr/src/app/src
+    command: npm run start:dev
+    environment:
+      - port=8000
+      - msNatsServer=nats://nats-server:4222
+      - dbHost=172.31.23.42
+      - dbPort=5432
+      - dbUser=postgres
+      - dbPassword=co@c2024
+      - dbName=RRF_BD_PG
+      - dbSsl=false
+
+  ms-auth:
+    container_name: MS-AUTH-FINANTIX-DEV
+    build: ./ms-auth
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ms-auth/src:/usr/src/app/src
+    command: npm run start:dev
+    environment:
+      - port=8001
+      - msNatsServer=nats://nats-server:4222
+      - jwtSecret=6e2f8c7b9a4d1e5f3c0b7a2d9f8e6c1b
+      - jwtExpiresIn=2h
+      - jwtRefreshExpiresIn=7d
+      - dbHost=172.31.23.42
+      - dbPort=5432
+      - dbUser=postgres
+      - dbPassword=co@c2024
+      - dbName=RRF_BD_PG
+      - dbSsl=false
+
+  ms-confi:
+    container_name: MS-CONFI-FINANTIX-DEV
+    build: ./ms-confi
+    ports:
+      - "8012:8012"
+    volumes:
+      - ./ms-confi/src:/usr/src/app/src
+    command: npm run start:dev
+    environment:
+      - port=8012
+      - msNatsServer=nats://nats-server:4222
+      - dbHost=172.31.23.42
+      - dbPort=5432
+      - dbUser=postgres
+      - dbPassword=co@c2024
+      - dbName=RRF_BD_PG
+      - dbSsl=false
+
+
